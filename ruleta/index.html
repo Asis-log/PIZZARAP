@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Ruleta Pizza Rap</title>
+<meta name="theme-color" content="#d62828" />
+<style>
+  :root{
+    --rojo:#d62828;
+    --rojo-osc:#a4161a;
+    --amarillo:#ffca3a;
+    --crema:#fff7e6;
+    --tinta:#241c1c;
+    --verde:#2a9d8f;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:grid; place-items:center;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    color:var(--tinta);
+    background:
+      radial-gradient(circle at 20% 0%, #ffdf7a 0 12%, transparent 13%),
+      radial-gradient(circle at 100% 20%, #ef6a62 0 11%, transparent 12%),
+      linear-gradient(160deg,#fff5d6,#ffd9b8 55%,#ffc2b8);
+    padding:18px;
+  }
+  .app{
+    width:min(100%,520px);
+    background:rgba(255,255,255,.92);
+    border:3px solid #fff;
+    border-radius:28px;
+    box-shadow:0 18px 50px rgba(70,20,10,.20);
+    overflow:hidden;
+  }
+  header{
+    padding:20px 20px 14px;
+    text-align:center;
+    background:linear-gradient(135deg,var(--rojo),#f04b3f);
+    color:white;
+  }
+  .brand{
+    display:inline-flex;align-items:center;gap:10px;
+    font-weight:950;font-size:30px;letter-spacing:-1px;
+  }
+  .slice{font-size:32px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.12))}
+  header p{margin:5px 0 0;font-weight:700;opacity:.94}
+  main{padding:18px}
+  .wheel-wrap{
+    position:relative;
+    width:min(88vw,420px);
+    aspect-ratio:1;
+    margin:4px auto 14px;
+  }
+  canvas{
+    width:100%;height:100%;
+    border-radius:50%;
+    filter:drop-shadow(0 12px 14px rgba(50,15,10,.18));
+    transition:transform 5.2s cubic-bezier(.12,.68,.11,1);
+  }
+  .pointer{
+    position:absolute;left:50%;top:-5px;transform:translateX(-50%);
+    width:0;height:0;
+    border-left:18px solid transparent;border-right:18px solid transparent;
+    border-top:0;border-bottom:38px solid #222;
+    z-index:2;
+    filter:drop-shadow(0 3px 2px rgba(0,0,0,.25));
+  }
+  .hub{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:72px;height:72px;border-radius:50%;
+    background:white;border:9px solid var(--amarillo);
+    display:grid;place-items:center;font-size:30px;
+    box-shadow:0 5px 15px rgba(0,0,0,.2);
+    z-index:2;
+  }
+  .cta{
+    width:100%;border:0;border-radius:16px;
+    padding:16px 18px;
+    font-size:20px;font-weight:900;
+    background:linear-gradient(180deg,var(--amarillo),#ffb703);
+    color:#281a00;
+    box-shadow:0 7px 0 #d89400;
+    cursor:pointer;
+  }
+  .cta:active{transform:translateY(3px);box-shadow:0 4px 0 #d89400}
+  .cta:disabled{opacity:.55;cursor:not-allowed}
+  .small{
+    text-align:center;font-size:12px;line-height:1.35;color:#6d5c59;
+    margin:14px 8px 2px;
+  }
+  .result{
+    display:none;
+    margin-top:16px;padding:16px;
+    border:2px dashed var(--rojo);border-radius:18px;
+    text-align:center;background:#fff8e8;
+  }
+  .result.show{display:block}
+  .result h2{margin:0 0 6px;font-size:25px;color:var(--rojo)}
+  .result .prize{font-size:22px;font-weight:950;margin:8px 0}
+  .coupon{
+    display:inline-block;margin-top:8px;padding:9px 12px;
+    border-radius:10px;background:#241c1c;color:white;
+    font:800 16px ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:1px;
+  }
+  .claim{
+    margin-top:10px;font-size:13px;color:#5d4e4b
+  }
+  .admin-note{
+    margin-top:14px;padding:10px 12px;border-radius:12px;
+    background:#f4f1ed;font-size:12px;color:#665d58;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><span class="slice">🍕</span> PIZZA RAP</div>
+    <p>Girás y después seguís por WhatsApp 🍕</p>
+  </header>
+
+  <main>
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="900" height="900"></canvas>
+      <div class="hub">🍕</div>
+    </div>
+
+    <button class="cta" id="spinBtn">GIRAR LA RULETA</button>
+
+    <div class="result" id="result">
+      <h2 id="resultTitle">¡Premio!</h2>
+      <div class="prize" id="prizeText"></div>
+      <div>Mostrá este código al pedir:</div>
+      <div class="coupon" id="coupon"></div>
+      <div class="claim" id="claimText"></div>
+    </div>
+
+    <div class="small">
+      Promoción sujeta a disponibilidad. Un giro por dispositivo cada 24 horas. Para usar el beneficio, seguinos en Instagram. Los premios no son acumulables entre sí.
+    </div>
+
+    <div class="admin-note">
+      MVP de prueba con salida a WhatsApp. Antes de usarlo con clientes, reemplazá el número de WhatsApp en la sección <b>CONFIGURACIÓN</b>. Para automatizar la respuesta de Pizza Rap se necesita configurar WhatsApp Business o una integración.
+    </div>
+  </main>
+</div>
+
+<script>
+/* ==========================================================
+   CONFIGURACIÓN — EDITAR ACÁ LOS PREMIOS DEL PILOTO
+   ========================================================== */
+const prizes = [
+  {label:"3RA GRATIS", detail:"Pedí 2 pizzas y la 3ra es gratis", type:"win"},
+  {label:"NO GANÉ", detail:"Esta vez no salió premio", type:"lose"},
+  {label:"25% MENOS", detail:"Seguinos en Instagram + 25% menos comprando 2 pizzas", type:"win"},
+  {label:"NO GANÉ", detail:"Esta vez no salió premio", type:"lose"},
+  {label:"3RA GRATIS", detail:"Pedí 2 pizzas y la 3ra es gratis", type:"win"},
+  {label:"25% MENOS", detail:"Seguinos en Instagram + 25% menos comprando 2 pizzas", type:"win"}
+];
+
+const COLORS = ["#d62828","#5f6b70","#ffca3a","#5f6b70","#f77f00","#2a9d8f"];
+const LOCK_HOURS = 24;
+
+// IMPORTANTE: reemplazar por el WhatsApp real de Pizza Rap.
+// Formato Argentina: 549 + código de área + número, todo junto, sin + ni espacios.
+// Ejemplo ilustrativo: 5493531234567
+const WHATSAPP_NUMBER = "5493534212916";
+const WHATSAPP_DELAY_MS = 1800;
+/* ========================================================== */
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const spinBtn = document.getElementById("spinBtn");
+const result = document.getElementById("result");
+const prizeText = document.getElementById("prizeText");
+const coupon = document.getElementById("coupon");
+const claimText = document.getElementById("claimText");
+const resultTitle = document.getElementById("resultTitle");
+
+function drawWheel(){
+  const n = prizes.length, cx=canvas.width/2, cy=canvas.height/2, r=canvas.width*.47;
+  const arc = Math.PI*2/n;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let i=0;i<n;i++){
+    const start = -Math.PI/2 + i*arc;
+    const end = start + arc;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,end);
+    ctx.closePath();
+    ctx.fillStyle=COLORS[i%COLORS.length];
+    ctx.fill();
+    ctx.lineWidth=10;
+    ctx.strokeStyle="#fff";
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(start+arc/2);
+    ctx.textAlign="right";
+    ctx.textBaseline="middle";
+    ctx.font="900 42px system-ui";
+    ctx.fillStyle=(i===1 || i===5) ? "#2b2100" : "#fff";
+    ctx.fillText(prizes[i].label, r-42, 0);
+    ctx.restore();
+  }
+}
+drawWheel();
+
+function randomCoupon(){
+  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s="PR-";
+  for(let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+function remainingLock(){
+  const raw = localStorage.getItem("pizzaRapLastSpin");
+  if(!raw) return 0;
+  const elapsed = Date.now()-Number(raw);
+  return Math.max(0, LOCK_HOURS*3600000-elapsed);
+}
+
+function formatRemaining(ms){
+  const h=Math.floor(ms/3600000);
+  const m=Math.ceil((ms%3600000)/60000);
+  return h>0 ? `${h} h ${m} min` : `${m} min`;
+}
+
+function refreshLock(){
+  const left=remainingLock();
+  if(left>0){
+    spinBtn.disabled=true;
+    spinBtn.textContent="YA GIRASTE HOY";
+    result.classList.add("show");
+    resultTitle.textContent="Ya participaste";
+    prizeText.textContent="Podés volver a girar cuando termine el plazo.";
+    coupon.textContent="PIZZA RAP";
+    claimText.textContent=`Faltan aprox. ${formatRemaining(left)}.`;
+  }
+}
+refreshLock();
+
+let spinning=false, rotation=0;
+
+spinBtn.addEventListener("click", ()=>{
+  if(spinning || remainingLock()>0) return;
+  spinning=true;
+  spinBtn.disabled=true;
+  result.classList.remove("show");
+
+  const chosen = Math.floor(Math.random()*prizes.length);
+  const n=prizes.length;
+  const arc=360/n;
+  const centerOfChosen = chosen*arc + arc/2;
+  const extraTurns = 6*360;
+  const target = extraTurns + (360 - centerOfChosen);
+  rotation += target;
+
+  canvas.style.transform=`rotate(${rotation}deg)`;
+
+  setTimeout(()=>{
+    const prize=prizes[chosen];
+    localStorage.setItem("pizzaRapLastSpin", Date.now().toString());
+
+    const code = randomCoupon();
+
+    if(prize.type === "win"){
+      resultTitle.textContent = "¡Ganaste!";
+      prizeText.textContent = prize.detail;
+      coupon.textContent = code;
+      claimText.textContent = "Te llevamos a WhatsApp para reclamar tu premio.";
+
+      const msg = `Hola Pizza Rap 👋 Gané en la ruleta: ${prize.detail}. Mi código es ${code}. Quiero reclamar mi premio.`;
+      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+
+      result.classList.add("show");
+      spinBtn.textContent="YA GIRASTE HOY";
+      spinning=false;
+
+      setTimeout(()=>{ window.location.href = url; }, WHATSAPP_DELAY_MS);
+
+    } else {
+      resultTitle.textContent = "¡Esta vez no salió!";
+      prizeText.textContent = "Pero todavía podés llevarte un regalo seguro.";
+      coupon.textContent = "PIZZA RAP";
+      claimText.textContent = "Te llevamos a WhatsApp.";
+
+      const msg = `Hola Pizza Rap 👋 No gané en la ruleta. ¿Cómo hago para llevarme el regalo seguro?`;
+      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+
+      result.classList.add("show");
+      spinBtn.textContent="YA GIRASTE HOY";
+      spinning=false;
+
+      setTimeout(()=>{ window.location.href = url; }, WHATSAPP_DELAY_MS);
+    }
+  }, 5250);
+});
+</script>
+</body>
+</html>
